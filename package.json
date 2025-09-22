@@ -21,6 +21,7 @@
     "@mantine/notifications": "^8.3.1",
     "@tabler/icons-react": "^3.34.1",
     "dayjs": "^1.11.18",
+    "gh": "^2.8.9",
     "mantine": "link:/dates",
     "next": "^15.1.7",
     "react": "^18.3.1",
