@@ -5,6 +5,7 @@ import {
   MantineProvider,
 } from "@mantine/core";
 import theme from "./theme";
+import "@mantine/dates/styles.css";
 import "./globals.css";
 
 export const metadata: Metadata = {

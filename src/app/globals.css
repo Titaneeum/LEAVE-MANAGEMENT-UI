@@ -1,2 +1,6 @@
 @import "tailwind-preset-mantine";
 @import "./theme.css";
+
+.pt {
+  background-color: "#000000";
+}
