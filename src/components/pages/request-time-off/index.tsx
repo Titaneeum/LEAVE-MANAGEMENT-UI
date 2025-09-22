@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -8,16 +9,27 @@ import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { Group } from "@mantine/core";
 import { Button } from "@mantine/core";
 import CustomNavbar from "@/components/navbar";
+import { useForm } from "@mantine/form";
 
 export default function Home() {
   // const [leaveType, setLeaveType] = useState("Annual Leave");
   const [dates, setDates] = useState<Date | null>(null);
   const [about, setAbout] = useState("");
 
+  const form = useForm({
+    initialValues: {
+      about: "",
+    },
+  });
+  console.log("form:", form.values.about);
+
+  const handleSubmit = (values: any) => {
+    console.log("values:", values);
+  };
   return (
     <>
       <Card className="max-w-4xl mx-auto shadow-sm p-6 rounded-md border">
-        <div className="flex gap-8">
+        <form onSubmit={handleSubmit} className="flex gap-8">
           {/* Left side: Form */}
           <div className="flex-[2]">
             <Text size="lg" fw={600} className="mb-4">
@@ -40,6 +52,7 @@ export default function Home() {
             />
 
             <Textarea
+              {...form.getInputProps("about")}
               label="About"
               placeholder="Include comments for your approver"
               value={about}
@@ -100,13 +113,15 @@ export default function Home() {
               </Group>
             </Dropzone>
           </div>
-        </div>
+          <Button variant="default" color="rgba(207, 204, 204, 1)">
+            Cancel
+          </Button>
+          <Button type="submit" variant="filled">
+            Request now
+          </Button>
+        </form>
       </Card>
       <div>
-        <Button variant="default" color="rgba(207, 204, 204, 1)">
-          Cancel
-        </Button>
-        <Button variant="filled">Request now</Button>
         <div className="relative size-32 ...">
           <div className="absolute right-0 bottom-0 size-16 ..."></div>
         </div>

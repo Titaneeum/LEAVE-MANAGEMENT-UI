@@ -37,6 +37,8 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
+import { UseData } from "../../useData";
+import { useForm } from "@mantine/form";
 
 type Draft = {
   id: string;
@@ -83,203 +85,18 @@ export default function LeaveTimeOffRequest() {
     if (saved) setDrafts(JSON.parse(saved));
   }, []);
 
-  //save drafts to localStorage
-  useEffect(() => {
-    localStorage.setItem("leaveDrafts", JSON.stringify(drafts));
-  }, [drafts]);
+  const { mutate: AddTimeOff, isPending: isAddTimeOffPending } =
+    UseData().set.timeOff.add;
 
-  useEffect(() => {
-    if (type === "Leave") {
-      setTimeOffType(null);
-      setHalfDaySession(null);
-      setTimeStart("");
-      setTimeEnd("");
-    } else {
-      setLeaveType(null);
-      setDateStart(null);
-      setDateEnd(null);
-    }
-    setReason("");
-  }, [type]);
-
-  useEffect(() => {
-    if (timeOffType === "Half Day" && halfDaySession) {
-      if (halfDaySession === "first_half") {
-        setTimeStart("08:00");
-        setTimeEnd("12:00");
-      } else if (halfDaySession === "second_half") {
-        setTimeStart("14:00");
-        setTimeEnd("17:00");
-      }
-    } else if (timeOffType === "By Hours") {
-      setTimeStart("");
-      setTimeEnd("");
-    }
-  }, [halfDaySession, timeOffType]);
-
-  const clearForm = () => {
-    setLeaveType(null);
-    setTimeOffType(null);
-    setHalfDaySession(null);
-    setDateStart(null);
-    setDateEnd(null);
-    setTimeStart("");
-    setTimeEnd("");
-    setReason("");
-    setFiles([]);
-    setCurrentDraftId(null);
-    setDraftName("");
-  };
-
-  const deleteDraft = (id: string) => {
-    setDrafts((prev) => prev.filter((d) => d.id !== id));
-    if (currentDraftId === id) {
-      setCurrentDraftId(null);
-      setDraftName("");
-    }
-  };
-
-  const saveDraft = () => {
-    //update draft
-    if (currentDraftId) {
-      setDrafts((prev) =>
-        prev.map((d) =>
-          d.id === currentDraftId
-            ? {
-                ...d,
-                type,
-                leaveType,
-                timeOffType,
-                halfDaySession,
-                dateStart,
-                dateEnd,
-                timeStart,
-                timeEnd,
-                reason,
-                files: files.map((f) => ({
-                  name: f.name,
-                  size: f.size,
-                  type: f.type,
-                })),
-                savedAt: new Date().toLocaleString(),
-              }
-            : d,
-        ),
-      );
-      alert(`Draft "${draftName || "untitled"}" updated!`);
-      clearForm();
-      return;
-    }
-
-    const name = prompt("Enter a name for this draft:");
-    if (!name?.trim()) {
-      alert("Draft name cannot be empty");
-      return;
-    }
-
-    const newDraft: Draft = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      type,
-      leaveType,
-      timeOffType,
-      halfDaySession,
-      dateStart,
-      dateEnd,
-      timeStart,
-      timeEnd,
-      reason,
-      files: files.map((f) => ({
-        name: f.name,
-        size: f.size,
-        type: f.type,
-      })),
-      savedAt: new Date().toLocaleString(),
-    };
-
-    setDrafts((prev) => [...prev, newDraft]);
-    setCurrentDraftId(newDraft.id);
-    setDraftName(newDraft.name);
-    alert(`Draft "${newDraft.name}" saved!`);
-    clearForm();
-  };
-
-  const loadDraft = (draft: Draft) => {
-    setType(draft.type);
-    setLeaveType(draft.leaveType);
-    setTimeOffType(draft.timeOffType);
-    setHalfDaySession(draft.halfDaySession);
-    setDateStart(draft.dateStart);
-    setDateEnd(draft.dateEnd);
-    setTimeStart(draft.timeStart);
-    setTimeEnd(draft.timeEnd);
-    setReason(draft.reason);
-    setFiles([]);
-    setCurrentDraftId(draft.id);
-    setDraftName(draft.name);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setFileError("");
-
-    const missing =
-      (type === "Leave" && (!leaveType || !dateStart || !dateEnd)) ||
-      (type === "Time Off" && (!timeOffType || !timeStart || !timeEnd)) ||
-      reason.trim() === "";
-
-    if (missing) return setError("Please fill in all required fields.");
-    if (type === "Leave" && leaveType === "Sick Leave" && files.length === 0)
-      return setFileError(
-        "Please attach a medical certificate/image for Sick Leave.",
-      );
-
-    const toISOTimeOn = (baseDate: Date | string, hhmm: string) => {
-      const [h, m] = hhmm.split(":").map(Number);
-      const d = new Date(baseDate);
-      d.setHours(h || 0, m || 0, 0, 0);
-      return d.toISOString();
-    };
-
-    const fd = new FormData();
-    fd.append("user_id", String(3));
-    fd.append("type", type);
-    if (type === "Leave" && leaveType) fd.append("leave_type", leaveType);
-    if (type === "Time Off" && timeOffType)
-      fd.append("time_off_type", timeOffType);
-    if (reason) fd.append("reason", reason);
-
-    if (timeStart) fd.append("time_start", toISOTimeOn(new Date(), timeStart));
-    if (timeEnd) fd.append("time_end", toISOTimeOn(new Date(), timeEnd));
-    if (dateStart) fd.append("day_start", toISOTimeOn(dateStart, "08:00"));
-    if (dateEnd) fd.append("day_end", toISOTimeOn(dateEnd, "17:00"));
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    files.forEach((f) => fd.append("file", files[0], files[0].name));
-
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:4000/time-off-request", {
-        method: "POST",
-        body: fd,
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.message || `Submit failed (${res.status})`);
-      } else {
-        notifications.show({ message: "Form submitted.", color: "green" });
-        clearForm();
-      }
-    } catch (err: any) {
-      notifications.show({
-        message: err.message || "Submit failed",
-        color: "red",
-      });
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+  const timeOffForm = useForm({
+    initialValues: {
+      leave_type: "",
+      rating: "",
+      reasons: "",
+    },
+  });
+  const handleSubmit = (values: any) => {
+    console.log("values:", values);
   };
 
   const navItems = [
@@ -322,50 +139,6 @@ export default function LeaveTimeOffRequest() {
             />
           ))}
         </Box>
-
-        <Box mt="lg">
-          <Text fw={600} size="sm" mb="xs">
-            Drafts
-          </Text>
-          {drafts.length === 0 ? (
-            <Text size="xs" c="dimmed">
-              No drafts saved
-            </Text>
-          ) : (
-            drafts.map((d) => (
-              <NavLink
-                key={d.id}
-                label={`${d.name} (${d.type})`}
-                description={d.reason.slice(0, 20) + "..."}
-                leftSection={<IconArchive size={16} />}
-                rightSection={
-                  <ActionIcon
-                    color="red"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteDraft(d.id);
-                    }}
-                  >
-                    <IconTrash size={14} />
-                  </ActionIcon>
-                }
-                onClick={() => loadDraft(d)}
-              />
-            ))
-          )}
-          {drafts.length > 0 && (
-            <Button
-              mt="sm"
-              variant="light"
-              color="red"
-              size="xs"
-              onClick={() => setDrafts([])}
-            >
-              Clear All Drafts
-            </Button>
-          )}
-        </Box>
       </AppShell.Navbar>
 
       <AppShell.Main>
@@ -399,8 +172,16 @@ export default function LeaveTimeOffRequest() {
 
             <Radio.Group value={type} onChange={setType} withAsterisk>
               <Group mt="xs" justify="center" gap="lg">
-                <Radio value="Leave" label="Leave" />
-                <Radio value="Time Off" label="Time Off" />
+                <Radio
+                  {...timeOffForm.getInputProps("leave_type")}
+                  value="Leave"
+                  label="Leave"
+                />
+                <Radio
+                  {...timeOffForm.getInputProps("leave_type")}
+                  value="Time Off"
+                  label="Time Off"
+                />
               </Group>
             </Radio.Group>
 
@@ -587,22 +368,11 @@ export default function LeaveTimeOffRequest() {
                 ))}
               </div>
             )}
-
-            <Group justify="end" mt="md" gap="sm">
-              <Button variant="outline" type="button" onClick={saveDraft}>
-                Save Draft
+            <Group>
+              <Button type="button" onClick={() => timeOffForm.reset()}>
+                reset
               </Button>
-              <Button variant="default" type="button" onClick={clearForm}>
-                Clear Form
-              </Button>
-              <Button
-                type="submit"
-                variant="gradient"
-                gradient={{ from: "blue", to: "cyan" }}
-                loading={loading}
-              >
-                Submit
-              </Button>
+              <Button type="submit">Submit</Button>
             </Group>
           </form>
         </div>

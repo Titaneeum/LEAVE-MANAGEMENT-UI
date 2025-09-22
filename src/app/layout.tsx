@@ -7,6 +7,7 @@ import {
 import theme from "./theme";
 import "@mantine/dates/styles.css";
 import "./globals.css";
+import { ReactProvider } from "@/lib/reactProvider";
 
 export const metadata: Metadata = {
   title: "Leave Management System",
@@ -24,7 +25,9 @@ export default function RootLayout({
         <ColorSchemeScript />
       </head>
       <body className="antialiased">
-        <MantineProvider theme={theme}>{children}</MantineProvider>
+        <ReactProvider>
+          <MantineProvider theme={theme}>{children}</MantineProvider>
+        </ReactProvider>
       </body>
     </html>
   );
