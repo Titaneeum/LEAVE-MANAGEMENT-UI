@@ -9,8 +9,8 @@ import "@mantine/dates/styles.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Next App Mantine Tailwind Template",
-  description: "Next App Mantine Tailwind Template",
+  title: "Leave Management System",
+  description: "",
 };
 
 export default function RootLayout({
