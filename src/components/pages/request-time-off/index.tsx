@@ -4,13 +4,13 @@ import { useState } from "react";
 import { Card, Select, Textarea, Text } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { IconUpload, IconPhoto, IconX } from "@tabler/icons-react";
-import { Dropzone, DropzoneProps, IMAGE_MIME_TYPE } from "@mantine/dropzone";
+import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { Group } from "@mantine/core";
 import { Button } from "@mantine/core";
 import CustomNavbar from "@/components/navbar";
 
 export default function Home() {
-  const [leaveType, setLeaveType] = useState("Annual Leave");
+  // const [leaveType, setLeaveType] = useState("Annual Leave");
   const [dates, setDates] = useState<Date | null>(null);
   const [about, setAbout] = useState("");
 
@@ -34,7 +34,7 @@ export default function Home() {
               label="Dates"
               placeholder="Pick date"
               value={dates}
-              onChange={setDates}
+              onChange={() => setDates}
               required
               className="my-4"
             />

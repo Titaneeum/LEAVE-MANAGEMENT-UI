@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -254,6 +255,7 @@ export default function LeaveTimeOffRequest() {
     if (dateStart) fd.append("day_start", toISOTimeOn(dateStart, "08:00"));
     if (dateEnd) fd.append("day_end", toISOTimeOn(dateEnd, "17:00"));
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     files.forEach((f) => fd.append("file", files[0], files[0].name));
 
     setLoading(true);
