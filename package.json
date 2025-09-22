@@ -5,7 +5,7 @@
   "scripts": {
     "puteri": "next dev -p 1000",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 1000",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
