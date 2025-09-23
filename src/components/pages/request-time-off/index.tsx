@@ -14,7 +14,6 @@ import { useForm } from "@mantine/form";
 export default function Home() {
   // const [leaveType, setLeaveType] = useState("Annual Leave");
   const [dates, setDates] = useState<Date | null>(null);
-  const [about, setAbout] = useState("");
 
   const form = useForm({
     initialValues: {
@@ -29,7 +28,7 @@ export default function Home() {
   return (
     <>
       <Card className="max-w-4xl mx-auto shadow-sm p-6 rounded-md border">
-        <form onSubmit={handleSubmit} className="flex gap-8">
+        <form onSubmit={form.onSubmit(handleSubmit)} className="flex gap-8">
           {/* Left side: Form */}
           <div className="flex-[2]">
             <Text size="lg" fw={600} className="mb-4">
@@ -55,8 +54,6 @@ export default function Home() {
               {...form.getInputProps("about")}
               label="About"
               placeholder="Include comments for your approver"
-              value={about}
-              onChange={(e) => setAbout(e.currentTarget.value)}
               minRows={3}
               className="mb-4"
             />
