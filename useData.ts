@@ -1,6 +1,10 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AddTimeOff, GetAllTimeOff } from "./services";
+import {
+  AddTimeOff,
+  DeleteTimeOff,
+  GetAllTimeOff,
+  UpdateTimeOff,
+} from "./services";
 
 export const useData = () => {
   return {
@@ -18,6 +22,14 @@ export const useData = () => {
         add: useMutation({
           mutationKey: ["add-timeoff"],
           mutationFn: AddTimeOff,
+        }),
+        update: useMutation({
+          mutationKey: ["update-timeoff"],
+          mutationFn: UpdateTimeOff,
+        }),
+        delete: useMutation({
+          mutationKey: ["delete-timeoff"],
+          mutationFn: DeleteTimeOff,
         }),
       },
     },
