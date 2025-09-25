@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -25,19 +26,11 @@ import {
 import { TimeInput, DateInput } from "@mantine/dates";
 import { Dropzone, IMAGE_MIME_TYPE, FileWithPath } from "@mantine/dropzone";
 
-import {
-  IconUpload,
-  IconPhoto,
-  IconX,
-  IconGauge,
-  IconLogout,
-  IconHome,
-} from "@tabler/icons-react";
+import { IconUpload, IconPhoto, IconX } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
 import { useData } from "../../../../useData";
 
 export default function LeaveTimeOffRequest() {
-  const [type, setType] = useState("Leave");
   const [leaveType, setLeaveType] = useState<string | null>(null);
   const [timeOffType, setTimeOffType] = useState<string | null>(null);
   const [halfDaySession, setHalfDaySession] = useState<string | null>(null);
@@ -45,7 +38,6 @@ export default function LeaveTimeOffRequest() {
   const [dateEnd, setDateEnd] = useState<string | null>(null);
   const [timeStart, setTimeStart] = useState("");
   const [timeEnd, setTimeEnd] = useState("");
-  const [reason, setReason] = useState("");
   const [files, setFiles] = useState<FileWithPath[]>([]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -89,9 +81,10 @@ export default function LeaveTimeOffRequest() {
       setTimeStart("");
       setTimeEnd("");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeOffType, halfDaySession]);
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-b from-[#8F140A] to-[#0B096B] p-4">
+    <div className="h-screen w-full flex items-center justify-center bg-gradient-to-b from-[#8F140A] to-[#0B096B] p-4">
       <form
         onSubmit={timeOffForm.onSubmit(handleSubmit)}
         className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-8 space-y-6"

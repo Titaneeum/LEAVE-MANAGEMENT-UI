@@ -13,7 +13,7 @@ export default function RequestLayout({
   const [active, setActive] = React.useState(0);
 
   const navItems = [
-    { icon: IconHome, label: "Home", link: "/" },
+    { icon: IconHome, label: "Home", link: "/time-off/request" },
     {
       icon: IconGauge,
       label: "Dashboard",
@@ -59,7 +59,10 @@ export default function RequestLayout({
         </Box>
       </AppShell.Navbar>
 
-      <AppShell.Main>{children}</AppShell.Main>
+      {/* <AppShell.Main>
+        <div>{children}</div>
+      </AppShell.Main> */}
+      <div className="w-[100dvw]">{children}</div>
     </AppShell>
   );
 }

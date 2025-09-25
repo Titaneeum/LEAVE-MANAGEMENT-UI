@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AddTimeOff,
