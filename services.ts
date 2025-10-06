@@ -1,6 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 
+const api = axios.create({
+  baseURL: "https://soila-untrapped-overdepressively.ngrok-free.dev/",
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export const createLeaveRequest = async (data: any) => {
+  const res = await api.post("/leave-request", data);
+  return res.data;
+};
+
 export const GetAllTimeOff = async () => {
   try {
     const response = await axios({
