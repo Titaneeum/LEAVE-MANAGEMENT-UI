@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import {
   Button,
@@ -13,12 +13,10 @@ import {
   Text,
   Textarea,
   Title,
-  ActionIcon,
   Checkbox,
+  Divider,
 } from "@mantine/core";
-import { DateInput, TimeInput } from "@mantine/dates";
-import { Dropzone, IMAGE_MIME_TYPE, FileWithPath } from "@mantine/dropzone";
-import { IconPhoto, IconX, IconClock } from "@tabler/icons-react";
+import { DateInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import "@mantine/dates/styles.css";
@@ -38,9 +36,9 @@ interface TimeOffValues {
 }
 
 export default function LeaveTimeOffRequest() {
-  const [files, setFiles] = useState<FileWithPath[]>([]);
-  const startRef = useRef<HTMLInputElement>(null);
-  const endRef = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [requestType, setRequestType] = useState("Leave");
+  const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null);
 
   const form = useForm<TimeOffValues>({
     initialValues: {
@@ -56,35 +54,30 @@ export default function LeaveTimeOffRequest() {
       half_day: false,
       half_type: undefined,
     },
-    validate: {
-      reason: (v) => (v.trim().length === 0 ? "Reason is required" : null),
-      time_start: (value, values) => {
-        if (values.type === "Time Off" && !value)
-          return "Start time is required";
-        return null;
-      },
-
-      time_end: (value, values) => {
-        console.log("error triger");
-        if (values.type === "Time Off") {
-          if (!value) return "End time is required";
-          const start = dayjs(values.time_start, "HH:mm");
-          const end = dayjs(value, "HH:mm");
-          if (!start.isValid() || !end.isValid()) return "Invalid time format";
-          const diff = end.diff(start, "minute");
-          if (diff < 0 || diff > 120)
-            return "End time must be within 2 hours after start time";
-        }
-        return null;
-      },
-    },
   });
 
-  // Reset form when type changes
+  // Auto time for half day
+  useEffect(() => {
+    if (form.values.half_day && form.values.half_type === "first_half") {
+      form.setFieldValue("time_start", "08:00 AM");
+      form.setFieldValue("time_end", "01:00 PM");
+    } else if (
+      form.values.half_day &&
+      form.values.half_type === "second_half"
+    ) {
+      form.setFieldValue("time_start", "02:00 PM");
+      form.setFieldValue("time_end", "05:00 PM");
+    } else if (!form.values.half_day) {
+      form.setFieldValue("time_start", "08:00 AM");
+      form.setFieldValue("time_end", "05:00 PM");
+    }
+  }, [form.values.half_day, form.values.half_type]);
+
+  // Reset when request type changes
   useEffect(() => {
     form.setValues({
       user_id: form.values.user_id,
-      type: form.values.type,
+      type: requestType as "Leave" | "Time Off",
       leave_policy: "",
       day_start: null,
       day_end: null,
@@ -96,400 +89,256 @@ export default function LeaveTimeOffRequest() {
       half_type: undefined,
     });
     setFiles([]);
-  }, [form.values.type]);
+    setSelectedPolicy(null);
+  }, [requestType]);
 
-  useEffect(() => {
-    if (form.values.half_day && form.values.day_start) {
-      form.setFieldValue("day_end", form.values.day_start);
-    }
-  }, [form.values.half_day, form.values.day_start]);
+  const handleSubmit = () => {
+    if (requestType === "Time Off") {
+      const start = form.values.time_start;
+      const end = form.values.time_end;
 
-  const [user, setUser] = useState<{
-    id: number;
-    name: string;
-    email: string;
-    profile?: string;
-  } | null>(null);
-
-  useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser && savedUser !== "undefined" && savedUser !== "null") {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        form.setFieldValue("user_id", parsedUser.id.toString());
-      } catch (err) {
-        console.error("Invalid user in localStorage", err);
-      }
-    }
-  }, []);
-
-  const combineDateTime = (date: Date | null, time: string | null) => {
-    if (!date || !time) return null;
-    const [h, m] = time.split(":").map(Number);
-    return dayjs(date)
-      .hour(h)
-      .minute(m)
-      .second(0)
-      .millisecond(0)
-      .format("YYYY-MM-DDTHH:mm:ss");
-  };
-
-  const handleSubmit = async (values: TimeOffValues) => {
-    console.log("Submit triggered");
-    try {
-      let startDate: string | null = null;
-      let endDate: string | null = null;
-
-      if (values.type === "Leave") {
-        if (values.half_day && values.half_type === "first_half") {
-          startDate = combineDateTime(values.day_start, "08:00");
-          endDate = combineDateTime(values.day_start, "12:00");
-        } else if (values.half_day && values.half_type === "second_half") {
-          startDate = combineDateTime(values.day_start, "14:00");
-          endDate = combineDateTime(values.day_start, "17:00");
-        } else {
-          // Full day
-          startDate = combineDateTime(values.day_start, "08:00");
-          endDate = combineDateTime(
-            values.day_end ?? values.day_start,
-            "17:00",
-          );
-        }
-      } else if (values.type === "Time Off") {
-        startDate = combineDateTime(values.day_start, values.time_start);
-        endDate = combineDateTime(values.day_start, values.time_end);
+      //check empty
+      if (!start || !end) {
+        notifications.show({
+          title: "Error",
+          message: "Please fill in both start and end time.",
+          color: "red",
+        });
+        return;
       }
 
-      let api = "";
-      let payload: any;
-      if (values.type === "Leave") {
-        api = "http://10.0.2.8:4000/leave-request";
-        payload = {
-          leave_policy: values.leave_policy,
-          isHalf_Day: values.half_day ? 1 : 0,
-          date_start: startDate,
-          date_end: endDate,
-          reason: values.reason,
-          attachment: files.length ? files[0].name : null,
-          created_by: form.values.user_id,
-        };
-      } else if (values.type === "Time Off") {
-        api = "http://10.0.2.8:4000/time-off-request";
-        payload = {
-          date_start: startDate,
-          date_end: endDate,
-          reason: values.reason,
-          created_by: form.values.user_id,
-        };
+      const startTime = dayjs(start, "HH:mm");
+      const endTime = dayjs(end, "HH:mm");
+      const diff = endTime.diff(startTime, "hour", true);
+
+      if (diff <= 0) {
+        notifications.show({
+          title: "Error",
+          message: "end time must be after start time.",
+          color: "red",
+        });
+        return;
       }
 
-      console.log("Sending payload:", payload);
-
-      const res = await fetch(api, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("API request failed");
-
-      const data = await res.json();
-      console.log("Response:", data);
-
-      notifications.show({
-        title: "Success",
-        message: "Request submitted successfully!",
-        color: "green",
-      });
-
-      form.reset();
-      setFiles([]);
-    } catch (error: any) {
-      console.error(error.message);
-      notifications.show({
-        title: "Error",
-        message: "Failed to submit request.",
-        color: "red",
-      });
+      //exceed 2 hours
+      if (diff > 2) {
+        notifications.show({
+          title: "Invalid Time Duration",
+          message: "Time Off cannot exceed 2 hours.",
+          color: "red",
+        });
+        return;
+      }
     }
+
+    notifications.show({
+      title: "Submitted",
+      message: "Form submitted succesfully",
+      color: "green",
+    });
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-2xl bg-[#C5D8F1] rounded-2xl shadow-xl flex flex-col">
-        <form
-          id="leaveForm"
-          onSubmit={form.onSubmit(
-            (values) => handleSubmit(values),
-            (errors) => {
-              console.log("Validation failed:", errors);
-            },
-          )}
-          className="flex flex-col h-full"
-        >
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            <div className="text-center">
-              <Title order={2}>Leave / Time Off Request</Title>
-              <Text size="sm" c="dimmed">
-                Fill in the form below to request leave or time off.
-              </Text>
-            </div>
+    <div className="min-h-screen w-full p-6 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] text-gray-100 overflow-y-auto">
+      <div className="max-w-3xl mx-auto pb-20">
+        <div className="mb-6 text-center">
+          <Title order={2} className="font-semibold text-blue-100">
+            Leave / Time Off Request
+          </Title>
+          <Text size="sm" className="text-gray-400 mt-1">
+            Fill in the form below to request leave or time off.
+          </Text>
+        </div>
 
-            {/* Leave or Time Off */}
-            <Radio.Group withAsterisk {...form.getInputProps("type")}>
-              <Group mt="xs" justify="center" gap="lg">
+        <Paper
+          shadow="xl"
+          radius="lg"
+          p="lg"
+          className="bg-slate-800/70 border border-slate-700/60 backdrop-blur-md"
+        >
+          {/* Request Type */}
+          <div className="mb-4">
+            <Text size="sm" fw={500} className="mb-2 text-gray-300">
+              Request Type <span className="text-red-500">*</span>
+            </Text>
+            <Radio.Group value={requestType} onChange={setRequestType}>
+              <Group gap="md">
                 <Radio value="Leave" label="Leave" />
                 <Radio value="Time Off" label="Time Off" />
               </Group>
             </Radio.Group>
+          </div>
+          <Divider my="md" label="Leave Details" labelPosition="left" />
+          {/* Leave Policy (Leave only) */}
+          {requestType === "Leave" && (
+            <div className="mb-4">
+              <Text size="sm" fw={500} className="mb-2 text-gray-300">
+                Leave Policy <span className="text-red-500">*</span>
+              </Text>
+              <Select
+                placeholder="Select leave type"
+                data={["Annual Leave", "Medical Leave", "Emergency Leave"]}
+                radius="md"
+                size="md"
+                value={selectedPolicy}
+                onChange={(value) => {
+                  setSelectedPolicy(value);
+                  form.setFieldValue("leave_policy", value || "");
+                  form.setFieldValue("half_day", false);
+                  form.setFieldValue("half_type", undefined);
+                }}
+                className="bg-slate-700/60 text-gray-100"
+              />
 
-            {/* If Leave */}
-            {form.values.type === "Leave" && (
-              <>
-                <Select
-                  label="Leave Policy"
-                  placeholder="Select leave type"
-                  data={[
-                    { value: "annual_leave", label: "Annual Leave" },
-                    { value: "emergency_leave", label: "Emergency Leave" },
-                    { value: "unpaid_leave", label: "Unpaid Leave" },
-                    { value: "sick_leave", label: "Sick Leave" },
-                  ]}
-                  withAsterisk
-                  {...form.getInputProps("leave_policy")}
-                />
+              {/* Half Day Option */}
+              {selectedPolicy === "Annual Leave" && (
+                <>
+                  <Checkbox
+                    label="Apply as Half Day"
+                    className="mt-3 text-sm text-gray-200"
+                    checked={form.values.half_day}
+                    onChange={(e) => {
+                      const checked = e.currentTarget.checked;
+                      form.setFieldValue("half_day", checked);
+                      form.setFieldValue("half_type", undefined);
+                    }}
+                  />
 
-                {form.values.leave_policy === "annual_leave" && (
-                  <>
-                    <Checkbox
-                      label="Apply as Half Day"
-                      checked={form.values.half_day}
-                      onChange={(e) =>
-                        form.setFieldValue("half_day", e.currentTarget.checked)
+                  {form.values.half_day && (
+                    <Radio.Group
+                      value={form.values.half_type}
+                      onChange={(val) =>
+                        form.setFieldValue(
+                          "half_type",
+                          val as "first_half" | "second_half",
+                        )
                       }
-                    />
-
-                    {form.values.half_day && (
-                      <>
-                        <Select
-                          label="Select Half Day"
-                          placeholder="Pick one"
-                          data={[
-                            {
-                              value: "first_half",
-                              label: "First Half (8AM - 12PM)",
-                            },
-                            {
-                              value: "second_half",
-                              label: "Second Half (2PM - 5PM)",
-                            },
-                          ]}
-                          value={form.values.half_type}
-                          onChange={(val) => {
-                            form.setFieldValue(
-                              "half_type",
-                              val as "first_half" | "second_half" | undefined,
-                            );
-                            if (val === "first_half") {
-                              form.setFieldValue("time_start", "08:00");
-                              form.setFieldValue("time_end", "12:00");
-                            } else if (val === "second_half") {
-                              form.setFieldValue("time_start", "14:00");
-                              form.setFieldValue("time_end", "17:00");
-                            } else {
-                              form.setFieldValue("time_start", null);
-                              form.setFieldValue("time_end", null);
-                            }
-                          }}
+                      className="mt-3"
+                    >
+                      <Group gap="md">
+                        <Radio
+                          value="first_half"
+                          label="First Half (8:00 AM – 1:00 PM)"
+                          className="text-gray-200"
                         />
-
-                        <TimeInput
-                          label="Start Time"
-                          value={form.values.time_start || ""}
-                          readOnly
+                        <Radio
+                          value="second_half"
+                          label="Second Half (2:00 PM – 5:00 PM)"
+                          className="text-gray-200"
                         />
-                        <TimeInput
-                          label="End Time"
-                          value={form.values.time_end || ""}
-                          readOnly
-                        />
-                      </>
-                    )}
-                  </>
-                )}
+                      </Group>
+                    </Radio.Group>
+                  )}
+                </>
+              )}
 
-                {/* Dates */}
-                <Grid>
-                  <Grid.Col span={6}>
-                    <DateInput
-                      label="Start Date"
-                      placeholder="DD/MM/YYYY"
-                      valueFormat="DD/MM/YYYY"
-                      withAsterisk
-                      {...form.getInputProps("day_start")}
-                      popoverProps={{ position: "bottom-start" }}
+              {/* Display Time (Always visible) */}
+              {selectedPolicy && (
+                <Group mt="md" grow>
+                  <Input.Wrapper label="Start Time" className="text-gray-300">
+                    <Input
+                      value={form.values.time_start || "08:00 AM"}
+                      readOnly
+                      className="bg-slate-700/69 text-gray-100 border-slate-600"
                     />
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <DateInput
-                      label="End Date"
-                      placeholder="DD/MM/YYYY"
-                      valueFormat="DD/MM/YYYY"
-                      withAsterisk
-                      {...form.getInputProps("day_end")}
-                      readOnly={form.values.half_day}
-                      value={form.values.day_end}
-                      popoverProps={{ position: "bottom-start" }}
+                  </Input.Wrapper>
+                  <Input.Wrapper label="End Time" className="text-gray-300">
+                    <Input
+                      value={form.values.time_end || "05:00 PM"}
+                      readOnly
+                      className="bg-slate-700/60 text-gray-100 border-slate-600"
                     />
-                  </Grid.Col>
-                </Grid>
-
-                <Textarea
-                  label="Reason"
-                  placeholder="Enter your reason"
-                  autosize
-                  minRows={3}
-                  withAsterisk
-                  {...form.getInputProps("reason")}
-                />
-
-                <Input.Wrapper label="Attachment">
-                  <Dropzone
-                    onDrop={(accepted) => setFiles([...files, ...accepted])}
-                    maxSize={5 * 1024 ** 2}
-                    accept={IMAGE_MIME_TYPE}
-                  >
-                    <Group justify="center" gap="xl">
-                      <IconPhoto
-                        size={52}
-                        stroke={1.5}
-                        className="text-gray-400"
-                      />
-                      <Text size="sm" c="dimmed">
-                        Drag or click to select files (≤5 MB)
-                      </Text>
-                    </Group>
-                  </Dropzone>
+                  </Input.Wrapper>
+                </Group>
+              )}
+            </div>
+          )}
+          {requestType === "Time Off" && (
+            <div className="mb-4">
+              <Text size="sm" fw={500} className="mb-2 text-gray-300">
+                Time Duration <span className="text-red-500">*</span>
+              </Text>
+              <Group grow>
+                <Input.Wrapper label="Start Time" className="text-gray-300">
+                  <Input
+                    type="time"
+                    value={form.values.time_start || ""}
+                    onChange={(e) =>
+                      form.setFieldValue("time_start", e.currentTarget.value)
+                    }
+                    className="bg-slate-700/60 text-gray-100 border-slate-600"
+                  />
                 </Input.Wrapper>
-
-                {files.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {files.map((file) => (
-                      <Paper
-                        key={file.name}
-                        shadow="xs"
-                        p="sm"
-                        radius="md"
-                        withBorder
-                      >
-                        <Group justify="space-between">
-                          <Text size="sm">{file.name}</Text>
-                          <ActionIcon
-                            color="red"
-                            variant="light"
-                            onClick={() =>
-                              setFiles((f) => f.filter((x) => x !== file))
-                            }
-                          >
-                            <IconX size={16} />
-                          </ActionIcon>
-                        </Group>
-                      </Paper>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* If Time Off */}
-            {form.values.type === "Time Off" && (
-              <>
-                <DateInput
-                  label="Date"
-                  placeholder="DD/MM/YYYY"
-                  valueFormat="DD/MM/YYYY"
-                  withAsterisk
-                  {...form.getInputProps("day_start")}
-                />
-
-                <Grid>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <TimeInput
-                      label="Start Time"
-                      withAsterisk
-                      value={form.values.time_start ?? ""}
-                      onChange={(e) =>
-                        form.setFieldValue(
-                          "time_start",
-                          e.currentTarget.value || null,
-                        )
-                      }
-                      ref={startRef}
-                      rightSection={
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          onClick={() => startRef.current?.showPicker()}
-                        >
-                          <IconClock size={16} stroke={1.5} />
-                        </ActionIcon>
-                      }
-                    />
-                  </Grid.Col>
-
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <TimeInput
-                      label="End Time (max 2 hours)"
-                      withAsterisk
-                      value={form.values.time_end ?? ""}
-                      onChange={(e) =>
-                        form.setFieldValue(
-                          "time_end",
-                          e.currentTarget.value || null,
-                        )
-                      }
-                      ref={endRef}
-                      rightSection={
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          onClick={() => endRef.current?.showPicker()}
-                        >
-                          <IconClock size={16} stroke={1.5} />
-                        </ActionIcon>
-                      }
-                    />
-                  </Grid.Col>
-                </Grid>
-
-                <Textarea
-                  label="Reason"
-                  placeholder="Enter your reason"
-                  autosize
-                  minRows={3}
-                  withAsterisk
-                  {...form.getInputProps("reason")}
-                />
-              </>
-            )}
+                <Input.Wrapper label="End Time">
+                  <Input
+                    type="time"
+                    value={form.values.time_end || ""}
+                    onChange={(e) =>
+                      form.setFieldValue("time_end", e.currentTarget.value)
+                    }
+                    className="bg-slate-700/60 text-gray-100 border-slate-600"
+                  />
+                </Input.Wrapper>
+              </Group>
+            </div>
+          )}
+          {/* Dates */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <Text size="sm" fw={500} className="mb-2 text-gray-300">
+                Start Date <span className="text-red-500">*</span>
+              </Text>
+              <DateInput
+                placeholder="DD/MM/YYYY"
+                className="w-full bg-slate-700/60 text-gray-100 border-slate-600"
+              />
+            </div>
+            <div>
+              <Text size="sm" fw={500} className="mb-2 text-gray-300">
+                End Date <span className="text-red-500">*</span>
+              </Text>
+              <DateInput
+                placeholder="DD/MM/YYYY"
+                className="w-full bg-slate-700/60 text-gray-100 border-slate-600"
+              />
+            </div>
           </div>
-
-          {/* Sticky Buttons */}
-          <div className="sticky bottom-0 bg-[#C5D8F1] border-t border-gray-300 flex justify-end gap-3 p-4 rounded-b-2xl">
-            <Button
-              type="button"
-              variant="default"
-              onClick={() => {
-                form.reset();
-                setFiles([]);
+          {/* Reason */}
+          <div className="mb-4">
+            <Text size="sm" fw={500} className="mb-2 text-gray-300">
+              Reason <span className="text-red-500">*</span>
+            </Text>
+            <Textarea
+              placeholder="Enter your reason"
+              minRows={3}
+              {...form.getInputProps("reason")}
+              className="bg-slate-700/60 text-gray-100 border-slate-600"
+            />
+          </div>
+          {/* Upload */}
+          <div className="mb-6">
+            <Text size="sm" fw={500} className="mb-2 text-gray-300">
+              Supporting Document
+            </Text>
+            <input
+              type="file"
+              onChange={(e) => {
+                if (e.target.files) setFiles(Array.from(e.target.files));
               }}
-            >
-              Reset
-            </Button>
-            <Button type="submit">Submit</Button>
+              className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
           </div>
-        </form>
+          {/* Submit */}
+          <Group justify="flex-end">
+            <Button
+              color="blue"
+              className="rounded-md px-6"
+              onClick={handleSubmit}
+            >
+              Submit Request
+            </Button>
+          </Group>
+        </Paper>
       </div>
     </div>
   );

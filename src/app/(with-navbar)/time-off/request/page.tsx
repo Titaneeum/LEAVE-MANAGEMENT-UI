@@ -1,9 +1,12 @@
+"use client";
+
+import ReqLayout from "../../ReqLayout"; // layout untuk request page
 import LeaveTimeOffRequest from "@/components/pages/request-time-off";
 
-export default function LeaveTimeOffRequestPage() {
+export default function RequestPage() {
   return (
-    <div className="w-full">
+    <ReqLayout>
       <LeaveTimeOffRequest />
-    </div>
+    </ReqLayout>
   );
 }
