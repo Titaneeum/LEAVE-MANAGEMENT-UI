@@ -13,7 +13,6 @@ import {
   Text,
 } from "@mantine/core";
 import { motion } from "framer-motion";
-import { useState } from "react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,17 +48,19 @@ export default function LoginPage() {
         return;
       }
 
-      // Simpan user info & token
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", data.name);
+      localStorage.setItem("email", data.email);
+      localStorage.setItem("userId", data.userId);
 
-      // Kalau API ada user_id, guna ni:
-      if (data.user?.user_id) {
-        localStorage.setItem("user_id", data.user.user_id.toString());
-      }
+      if (data.user_id)
+        localStorage.setItem("user_id", data.user_id.toString());
+      if (data.userlevel_id)
+        localStorage.setItem("userlevel_id", data.userlevel_id.toString());
 
-      // Pergi ke dashboard
-      router.push("/dashboard");
+      const role = data.userlevel_id;
+      if (role === 0) router.push("/admin/AdminTeamReq");
+      else if (role === 1) router.push("/STAFF/StaffDashboard");
+      else router.push("/dashboard");
     } catch (err) {
       console.error(err);
       alert("Network error. Please try again.");
@@ -67,112 +68,115 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="h-screen w-screen flex text-white overflow-hidden">
-      {/* LEFT SIDE */}
-      <div className="w-1/2 flex flex-col justify-center items-center bg-[#0B1220] relative">
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0F172A]"
-          animate={{
-            backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          style={{ backgroundSize: "200% 200%", zIndex: 0 }}
-        />
-        <div className="relative z-10 text-center">
+    <div className="relative flex items-center justify-center h-screen w-screen overflow-hidden">
+      {/* 🔹 Gradient background (same as AdminTeamReq) */}
+      <motion.div
+        className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a]"
+        animate={{
+          backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+        style={{ backgroundSize: "200% 200%" }}
+      />
+
+      {/* 🔹 Subtle moving blue glow */}
+      <motion.div
+        className="absolute w-[600px] h-[600px] rounded-full bg-blue-700/10 blur-3xl"
+        animate={{
+          x: ["-15%", "15%", "-15%"],
+          y: ["-10%", "10%", "-10%"],
+        }}
+        transition={{
+          duration: 18,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+
+      {/* 🔹 Login Card */}
+      <Paper
+        p="xl"
+        radius="lg"
+        shadow="xl"
+        className="relative z-10 w-[380px] bg-slate-800/70 border border-slate-700/60 backdrop-blur-lg text-white"
+      >
+        <div className="text-center mb-6">
           <img
             src="/safwa.logo.png"
             alt="Safwa Logo"
-            className="w-28 mx-auto mb-6 drop-shadow-lg"
+            className="w-20 mx-auto mb-3 drop-shadow-md"
           />
-          <h1 className="text-4xl font-bold tracking-wide text-gray-100">
-            LEAVE MANAGEMENT SYSTEM
-          </h1>
-          <Text className="text-gray-400 mt-2">Safwa Industries</Text>
-        </div>
-      </div>
-
-      {/* RIGHT SIDE */}
-      <div className="w-1/2 flex items-center justify-center bg-[#111827] relative">
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-tr from-[#1E293B] via-[#0F172A] to-[#1E293B] opacity-90"
-          animate={{
-            backgroundPosition: ["0% 0%", "100% 100%", "0% 0%"],
-          }}
-          transition={{
-            duration: 18,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          style={{ backgroundSize: "200% 200%", zIndex: 0 }}
-        />
-        <Paper
-          p="xl"
-          radius="lg"
-          shadow="xl"
-          className="w-[360px] bg-slate-800/70 backdrop-blur-md relative z-10 border border-slate-700"
-        >
-          <Title order={2} mb="lg" ta="center" className="text-gray-100">
-            Sign In
+          <Title
+            order={3}
+            className="text-blue-100 font-semibold tracking-wide uppercase"
+          >
+            Leave Management System
           </Title>
+        </div>
 
-          <form onSubmit={form.onSubmit(handleSubmit)}>
-            <TextInput
-              label="Email"
-              placeholder="Enter your email"
-              {...form.getInputProps("email")}
-              mb="sm"
-              styles={{
-                input: {
-                  backgroundColor: "#0F172A",
-                  color: "white",
-                  borderColor: "#334155",
-                },
-                label: { color: "#CBD5E1" },
-              }}
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <TextInput
+            label="Email"
+            placeholder="Enter your email"
+            {...form.getInputProps("email")}
+            mb="sm"
+            styles={{
+              input: {
+                backgroundColor: "#0f172a",
+                color: "white",
+                borderColor: "#334155",
+              },
+              label: { color: "#CBD5E1" },
+            }}
+          />
+
+          <PasswordInput
+            label="Password"
+            placeholder="Enter your password"
+            {...form.getInputProps("password")}
+            mb="sm"
+            styles={{
+              input: {
+                backgroundColor: "#0f172a",
+                color: "white",
+                borderColor: "#334155",
+              },
+              label: { color: "#CBD5E1" },
+            }}
+          />
+
+          <Group justify="space-between" mb="md">
+            <Checkbox
+              label="Remember me"
+              {...form.getInputProps("remember", { type: "checkbox" })}
+              color="blue"
             />
-            <PasswordInput
-              label="Password"
-              placeholder="Enter your password"
-              {...form.getInputProps("password")}
-              mb="sm"
-              styles={{
-                input: {
-                  backgroundColor: "#0F172A",
-                  color: "white",
-                  borderColor: "#334155",
-                },
-                label: { color: "#CBD5E1" },
-              }}
-            />
-
-            <Group justify="space-between" mb="md">
-              <Checkbox
-                label="Remember me"
-                {...form.getInputProps("remember", { type: "checkbox" })}
-                color="blue"
-              />
-              <Text
-                size="sm"
-                className="text-blue-400 hover:text-blue-300 cursor-pointer"
-              >
-                Forgot Password?
-              </Text>
-            </Group>
-
-            <Button
-              type="submit"
-              fullWidth
-              radius="md"
-              className="bg-blue-700 hover:bg-blue-600 font-semibold transition-all"
+            <Text
+              size="sm"
+              className="text-blue-400 hover:text-blue-300 cursor-pointer transition-all"
             >
-              Login
-            </Button>
-          </form>
-        </Paper>
+              Forgot Password?
+            </Text>
+          </Group>
+
+          <Button
+            type="submit"
+            fullWidth
+            radius="md"
+            className="bg-blue-700 hover:bg-blue-600 font-semibold transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
+          >
+            Login
+          </Button>
+        </form>
+      </Paper>
+
+      {/* Footer */}
+      <div className="absolute bottom-4 text-gray-400 text-xs">
+        © {new Date().getFullYear()} Safwa Industries
       </div>
     </div>
   );

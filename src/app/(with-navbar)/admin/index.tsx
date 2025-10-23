@@ -1,7 +1,7 @@
 "use client";
 
 import { Text, Paper } from "@mantine/core";
-import AdminTeamReq from "@/components/pages/dashboard/AdminTeamReq";
+import AdminTeamReq from "@/app/(with-navbar)/ADMIN/AdminTeamReq";
 
 export default function AdminDashboard() {
   return (

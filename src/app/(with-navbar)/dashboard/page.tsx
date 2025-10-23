@@ -1,9 +1,10 @@
-import Dashboard from "@/app/(with-navbar)/admin/AdminTeamReq";
+import NavbarLayout from "@/app/(with-navbar)/NavbarLayout";
+import AdminTeamReq from "@/app/(with-navbar)/ADMIN/AdminTeamReq";
 
 export default function DashboardPage() {
   return (
-    <>
-      <Dashboard />
-    </>
+    <NavbarLayout>
+      <AdminTeamReq />
+    </NavbarLayout>
   );
 }

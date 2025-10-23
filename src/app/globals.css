@@ -4,3 +4,41 @@
 .pt {
   background-color: "#000000";
 }
+
+@keyframes eye-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.3) rotate(8deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes eye-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-eye-pop {
+  animation: eye-pop 0.4s ease-in-out;
+}
+
+.group.animate-eye-pop .animate-eye-pulse {
+  animation: eye-pulse 0.4s ease-out;
+}
