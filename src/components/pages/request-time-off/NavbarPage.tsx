@@ -88,7 +88,7 @@ export default function NavbarPage({
     if (item.label === "Dashboard") {
       const role = localStorage.getItem("user_role");
       if (role === "superduperadmin") {
-        window.location.href = "/admin/AdminTeamReq";
+        window.location.href = "/dashboard";
       } else {
         window.location.href = "/dashboard";
       }

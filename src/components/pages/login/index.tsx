@@ -58,7 +58,7 @@ export default function LoginPage() {
         localStorage.setItem("userlevel_id", data.userlevel_id.toString());
 
       const role = data.userlevel_id;
-      if (role === 0) router.push("/admin/AdminTeamReq");
+      if (role === 0) router.push("/dashboard");
       else if (role === 1) router.push("/STAFF/StaffDashboard");
       else router.push("/dashboard");
     } catch (err) {
