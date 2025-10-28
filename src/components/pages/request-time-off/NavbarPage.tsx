@@ -74,7 +74,7 @@ export default function NavbarPage({
     {
       icon: IconCalendarStats,
       label: "Leave Balance",
-      link: "/time-off/balance",
+      link: "/staff",
     },
     { icon: IconLogout, label: "Logout", link: "/login" },
   ];
@@ -90,7 +90,7 @@ export default function NavbarPage({
       if (role === "superduperadmin") {
         window.location.href = "/dashboard";
       } else {
-        window.location.href = "/dashboard";
+        window.location.href = "/STAFF";
       }
     } else {
       window.location.href = item.link;

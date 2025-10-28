@@ -1,4 +1,9 @@
 "use client";
+
+// ❌ Jangan import core/notifications CSS
+// ✅ Import hanya calendar styles
+import "@mantine/dates/styles.css";
+
 import { ReactProvider } from "@/lib/reactProvider";
 import "./globals.css";
 

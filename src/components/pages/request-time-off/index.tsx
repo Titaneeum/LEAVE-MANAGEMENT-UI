@@ -26,8 +26,8 @@ interface TimeOffValues {
   user_id: string;
   type: "Leave" | "Time Off";
   leave_policy: string;
-  date_start: Date | null;
-  date_end: Date | null;
+  day_start: Date | null;
+  day_end: Date | null;
   reason: string;
   supp_document: string;
   time_start: string | null;
@@ -41,6 +41,8 @@ export default function RequestTimeOffPage() {
   const [requestType, setRequestType] = useState("Leave");
   const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null);
   const [value, setValue] = useState<Date | null>(null);
+  const [day_start, setDayStart] = useState<Date | null>(null);
+  const [day_end, setEndDate] = useState<Date | null>(null);
 
   const form = useForm<TimeOffValues>({
     initialValues: {
@@ -75,10 +77,10 @@ export default function RequestTimeOffPage() {
     }
   }, [form.values.half_day, form.values.half_type]);
 
-  // Reset when request type changes
   useEffect(() => {
+    // Set semula semua values manual
     form.setValues({
-      user_id: form.values.user_id,
+      user_id: "",
       type: requestType as "Leave" | "Time Off",
       leave_policy: "",
       day_start: null,
@@ -90,8 +92,13 @@ export default function RequestTimeOffPage() {
       half_day: false,
       half_type: undefined,
     });
+
+    // Reset semua local states luar form
     setFiles([]);
     setSelectedPolicy(null);
+    setDayStart(null);
+    setEndDate(null);
+    setValue(null);
   }, [requestType]);
 
   const handleSubmit = () => {
@@ -286,53 +293,20 @@ export default function RequestTimeOffPage() {
             )}
 
             {/* Dates */}
-            <Group grow>
+            <Group grow mt="md">
               <DatePickerInput
                 label="Start Date"
                 placeholder="Select start date"
                 value={day_start}
-                onChange={setDayStart}
-                valueFormat="DD/MM/YYYY"
-                popoverProps={{ withinPortal: true }}
-                className="w-full"
-                styles={{
-                  input: {
-                    backgroundColor: "#1e293b", // slate-800
-                    borderColor: "#334155", // slate-700
-                    color: "white",
-                    fontSize: "0.9rem",
-                    padding: "10px",
-                    borderRadius: "8px",
-                  },
-                  label: {
-                    color: "#cbd5e1",
-                    fontWeight: 500,
-                  },
-                  day: {
-                    color: "white",
-                    "&[data-selected]": {
-                      backgroundColor: "#2563eb",
-                    },
-                    "&:hover": {
-                      backgroundColor: "#334155",
-                    },
-                  },
-                  calendarHeaderControl: {
-                    color: "white",
-                  },
-                  calendarHeaderLevel: {
-                    color: "white",
-                  },
+                onChange={(date) => {
+                  setDayStart(date as Date | null);
+                  form.setFieldValue("day_start", date as Date | null);
                 }}
-              />
-
-              <DatePickerInput
-                label="End Date"
-                placeholder="Select end date"
-                value={day_end}
-                onChange={setEndDate}
                 valueFormat="DD/MM/YYYY"
-                popoverProps={{ withinPortal: true }}
+                popoverProps={{
+                  withinPortal: true,
+                  zIndex: 9999,
+                }}
                 className="w-full"
                 styles={{
                   input: {
@@ -349,15 +323,12 @@ export default function RequestTimeOffPage() {
                   },
                   day: {
                     color: "white",
-                    "&[data-selected]": {
-                      backgroundColor: "#2563eb",
-                    },
-                    "&:hover": {
-                      backgroundColor: "#334155",
-                    },
+                    "&[data-selected]": { backgroundColor: "#2563eb" },
+                    "&:hover": { backgroundColor: "#334155" },
                   },
                   calendarHeaderControl: {
                     color: "white",
+                    svg: { width: "1rem", height: "1rem" },
                   },
                   calendarHeaderLevel: {
                     color: "white",

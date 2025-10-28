@@ -42,3 +42,14 @@
 .group.animate-eye-pop .animate-eye-pulse {
   animation: eye-pulse 0.4s ease-out;
 }
+
+/*mantine calendar */
+.mantine-DatePickerInput-calendarHederControl svg {
+  width: 1rem !important;
+  height: 1rem !important;
+}
+
+/*optional: improve calendar alignment*/
+.mantine-DatePickerInput-dropdown {
+  max-width: 320px !important;
+}

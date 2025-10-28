@@ -105,11 +105,6 @@ export default function LoginPage() {
         className="relative z-10 w-[380px] bg-slate-800/70 border border-slate-700/60 backdrop-blur-lg text-white"
       >
         <div className="text-center mb-6">
-          <img
-            src="/safwa.logo.png"
-            alt="Safwa Logo"
-            className="w-20 mx-auto mb-3 drop-shadow-md"
-          />
           <Title
             order={3}
             className="text-blue-100 font-semibold tracking-wide uppercase"
@@ -158,6 +153,11 @@ export default function LoginPage() {
             <Text
               size="sm"
               className="text-blue-400 hover:text-blue-300 cursor-pointer transition-all"
+              onClick={() =>
+                alert(
+                  "Please contact your system administrator to reset your password.",
+                )
+              }
             >
               Forgot Password?
             </Text>

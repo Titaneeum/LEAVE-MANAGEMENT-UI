@@ -31,10 +31,13 @@ export default function NavbarPage({
   const [preview, setPreview] = useState<string | null>(null);
   const [username, setUsername] = useState<string>("");
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     const storedName = localStorage.getItem("user_name");
+    const storedRole = localStorage.getItem("user_role");
     if (storedName) setUsername(storedName);
+    if (storedRole) setRole(storedRole);
   }, []);
 
   const handleSelectFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -64,7 +67,8 @@ export default function NavbarPage({
     }
   };
 
-  const navItems = [
+  // Base nav items
+  let navItems = [
     { icon: IconGauge, label: "Dashboard", link: "/dashboard" },
     {
       icon: IconAlignBoxLeftTop,
@@ -74,10 +78,15 @@ export default function NavbarPage({
     {
       icon: IconCalendarStats,
       label: "Leave Balance",
-      link: "/time-off/balance",
+      link: "/staff",
     },
     { icon: IconLogout, label: "Logout", link: "/login" },
   ];
+
+  // Filter out "Leave Balance" if user is superduperadmin
+  if (role === "superduperadmin") {
+    navItems = navItems.filter((item) => item.label !== "Leave Balance");
+  }
 
   const handleNavClick = (item: (typeof navItems)[0]) => {
     if (item.label === "Logout") {
@@ -90,7 +99,14 @@ export default function NavbarPage({
       if (role === "superduperadmin") {
         window.location.href = "/dashboard";
       } else {
-        window.location.href = "/staff/StaffDashboard";
+        window.location.href = "/STAFF";
+      }
+    } else if (item.label === "Leave Balance") {
+      const role = localStorage.getItem("user_role");
+      if (role === "superduperadmin") {
+        window.location.href = "/admin/balance";
+      } else {
+        window.location.href = "/STAFF";
       }
     } else {
       window.location.href = item.link;
